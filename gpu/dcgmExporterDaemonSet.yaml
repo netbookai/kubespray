@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dcgm-exporter-1652294151
+  namespace: netbook
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: dcgm-exporter
+      app.kubernetes.io/instance: dcgm-exporter-1652294151
+      app.kubernetes.io/name: dcgm-exporter
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: dcgm-exporter
+        app.kubernetes.io/instance: dcgm-exporter-1652294151
+        app.kubernetes.io/name: dcgm-exporter
+        # netbook.ai/is-gpu-node: 'true'
+      annotations:
+         prometheus.io/scrape: "true"
+         prometheus.io/port: "9400"
+    spec:
+      hostPID: true
+      hostIPC: true
+      hostNetwork: true
+      volumes:
+        - configMap:
+            items:
+            - key: dcp-metrics-included.csv
+              path: dcp-metrics-included.csv
+            name: dcp-metrics-included
+          name: config
+        - name: pod-gpu-resources
+          hostPath:
+            path: /var/lib/kubelet/pod-resources
+            type: ''
+      containers:
+        - name: exporter
+          image: nvcr.io/nvidia/k8s/dcgm-exporter:2.3.5-2.6.5-ubuntu20.04
+          args:
+            - '-f'
+            - /etc/dcgm-exporter/dcp-metrics-included.csv
+          ports:
+            - name: metrics
+              containerPort: 9400
+              protocol: TCP
+          env:
+            - name: DCGM_EXPORTER_CONFIGMAP_DATA
+              value: "thanos:dcp-metrics-included"
+            - name: DCGM_EXPORTER_KUBERNETES
+              value: 'true'
+            - name: DCGM_EXPORTER_LISTEN
+              value: ':9400'
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/dcgm-exporter/dcp-metrics-included.csv
+              name: config
+              subPath: dcp-metrics-included.csv
+            - name: pod-gpu-resources
+              readOnly: true
+              mountPath: /var/lib/kubelet/pod-resources
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9400
+              scheme: HTTP
+            initialDelaySeconds: 45
+            timeoutSeconds: 1
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9400
+              scheme: HTTP
+            initialDelaySeconds: 45
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - SYS_ADMIN
+            runAsUser: 0
+            runAsNonRoot: false
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        netbook.ai/is-gpu-node: 'true'
+      serviceAccountName: default
+      serviceAccount: default
+      securityContext: {}
+      schedulerName: default-scheduler
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  revisionHistoryLimit: 10

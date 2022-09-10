@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-1652275767
+  namespace: netbook
+  labels:
+    app.kubernetes.io/instance: nvidia-device-plugin-1652275767
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/version: 0.11.0
+    helm.sh/chart: nvidia-device-plugin-0.11.0
+    # netbook.ai/is-gpu-node: 'true'
+  annotations:
+    deprecated.daemonset.template.generation: '2'
+    meta.helm.sh/release-name: nvidia-device-plugin-1652275767
+    meta.helm.sh/release-namespace: default
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: nvidia-device-plugin-1652275767
+      app.kubernetes.io/name: nvidia-device-plugin
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: nvidia-device-plugin-1652275767
+        app.kubernetes.io/name: nvidia-device-plugin
+        netbook.ai/is-gpu-node: 'true'
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+            type: ''
+      containers:
+        - name: nvidia-device-plugin-ctr
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.11.0
+          args:
+            - '--mig-strategy=none'
+            - '--pass-device-specs=false'
+            - '--fail-on-init-error=true'
+            - '--device-list-strategy=envvar'
+            - '--device-id-strategy=uuid'
+            - '--nvidia-driver-root=/'
+          resources: {}
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            allowPrivilegeEscalation: false
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        netbook.ai/is-gpu-node: 'true'
+      securityContext: {}
+      schedulerName: default-scheduler
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      priorityClassName: system-node-critical
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  revisionHistoryLimit: 10
