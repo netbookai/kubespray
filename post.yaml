@@ -1,4 +1,4 @@
----
+
 - hosts: all
   tasks:
   - name: "Update Repository cache"
@@ -6,12 +6,12 @@
       update_cache: true
       cache_valid_time: 3600
       force_apt_get: true
-  - name: Installing Nvidia Docker
-    hosts: all
-    become: true
-    become_user: root
-    tasks:
-      - name : Initiating Nvidia Docker
-        shell : distribution=$(. /etc/os-release;echo $ID$VERSION_ID)    && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -    && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list && apt-get update && apt-get install -y nvidia-docker2
-  - name: "Restarting Docker"
-    systemd: name=docker state=restarted enabled=yes
+- name: Installing Nvidia Docker
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name : Initiating Nvidia Docker
+      shell : distribution=$(. /etc/os-release;echo $ID$VERSION_ID)    && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -    && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list && apt-get update && apt-get install -y nvidia-docker2
+    - name: "Restarting Docker"
+      systemd: name=docker state=restarted enabled=yes
