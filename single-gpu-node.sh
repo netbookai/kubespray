@@ -11,7 +11,6 @@ cd ~/kubespray/
 pip3 install -r requirements.txt
 sudo apt-get -y install ansible
 cp -rfp ~/kubespray/inventory/sample ~/kubespray/inventory/mycluster
-declare -a IPS=(3.143.254.176)
 CONFIG_FILE=inventory/mycluster/hosts.yaml python3 contrib/inventory_builder/inventory.py ${IPS[@]}
 ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root cluster.yml
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
