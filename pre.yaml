@@ -30,6 +30,22 @@
       name:
         - cuda-drivers
       state: latest
+- hosts: all
+  tasks:
+  - name: Allow SSH in UFW
+    ufw: rule=allow port=22 proto=tcp
+  - name: Allow Kubernetes API server in UFW
+    ufw: rule=allow port=6443 proto=tcp
+  - name: Allow etcd server client API in UFW
+    ufw: rule=allow port=2379 proto=tcp
+  - name: Allow etcd server client API in UFW
+    ufw: rule=allow port=2380 proto=tcp
+  - name: Allow Kubelet API in UFW
+    ufw: rule=allow port=10250 proto=tcp
+  - name: Allow kube-scheduler in UFW
+    ufw: rule=allow port=10259 proto=tcp
+  - name: Allow kube-controller-manager in UFW
+    ufw: rule=allow port=10257 proto=tcp
 # - name: Installing Nvidia Docker
 #   hosts: all
 #   become: true
