@@ -1,0 +1,12 @@
+---
+- name: Iptables rules
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name : Allowing inbound port needed for k8s
+      shell : iptables -A INPUT -p tcp --dport 6443 -j ACCEPT && iptables -A INPUT -p tcp --dport 2379 -j ACCEPT && iptables -A INPUT -p tcp --dport 2380 -j ACCEPT && iptables -A INPUT -p tcp --dport 10250 -j ACCEPT && iptables -A INPUT -p tcp --dport 10259 -j ACCEPT && iptables -A INPUT -p tcp --dport 10257 -j ACCEPT
+    - name : Saving Iptables
+      shell : netfilter-persistent save
+    - name : Cronjob to reload Iptables
+      shell : crontab -l | { cat; echo "@reboot netfilter-persistent reload"; } | crontab -
